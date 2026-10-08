@@ -16,15 +16,18 @@ mkdir -p "$install_root"
 # cargo install otherwise reuses a matching installed version without checking
 # new compiler flags. Rebuild once when the release recipe changes.
 recipe=$( { cat scripts/build_search_tools.sh scripts/release_rust_env.sh Tools/search-tools.json; printf '%s' "$CARGO_ENCODED_RUSTFLAGS"; rustc --version; } | shasum -a 256 | cut -d ' ' -f 1)
-reinstall=()
+reinstall=false
 if [[ ! -f "$install_root/release-recipe.sha256" ]] || [[ "$(cat "$install_root/release-recipe.sha256")" != "$recipe" ]]; then
-  reinstall=(--force)
+  reinstall=true
 fi
 for crate in ripgrep fd-find; do
   version=$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0])).fetch(ARGV[1])' Tools/search-tools.json "$crate")
-  extra=()
-  if [[ "$crate" == ripgrep ]]; then extra=(--features pcre2); fi
-  cargo install "$crate" --version "=$version" --locked --root "$install_root" "${reinstall[@]}" "${extra[@]}"
+  # Keep the argument array nonempty: macOS Bash 3.2 treats an empty array's
+  # expansion as an unbound variable under set -u.
+  install_args=(install "$crate" --version "=$version" --locked --root "$install_root")
+  if [[ "$reinstall" == true ]]; then install_args+=(--force); fi
+  if [[ "$crate" == ripgrep ]]; then install_args+=(--features pcre2); fi
+  cargo "${install_args[@]}"
 done
 strip -x "$install_root/bin/rg" "$install_root/bin/fd"
 printf '%s\n' "$recipe" > "$install_root/release-recipe.sha256"
