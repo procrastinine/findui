@@ -141,8 +141,12 @@ package struct SearchCommandExport: Codable, Sendable {
         }
         var request = SearchRequest(state: descriptor.state, referenceDate: descriptor.referenceDate)
         descriptor.execution?.apply(to: &request)
-        let regenerated = try SearchPipelineCompiler(tools: descriptor.tools).compile(request)
-        guard regenerated.exportBody == script else {
+        let regenerated = try SearchPipelineCompiler(tools: descriptor.tools).compile(request, includeCommandMetadata: false)
+        // Older exports wrapped even ordinary GUI searches. Validate their
+        // recorded context and regenerated command independently of whether a
+        // new export still needs that wrapper.
+        let expected = try Self(request, tools: descriptor.tools).header() + regenerated.executionScript
+        guard expected == script else {
             throw SearchServiceError.commandFailed("This FindUI command was edited and no longer matches its search options. Paste the original export, or import a plain fd, rg, or find command.")
         }
         // The app compiles this state again using its own resolved tools. It

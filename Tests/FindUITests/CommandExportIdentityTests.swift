@@ -1,8 +1,69 @@
 @testable import SearchBackend
+import AppKit
 import SearchCore
 import Foundation
 import Testing
 @testable import FindUI
+
+@Test(arguments: [SearchMode.files, .folders, .everything, .contents])
+@MainActor func simpleSearchCommandsStayPlainThroughGUIPreparationAndCopy(mode: SearchMode) async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent("plain command \(UUID())")
+    let files = root.appendingPathComponent("files")
+    try FileManager.default.createDirectory(at: files.appendingPathComponent("sample_item folder"), withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    try Data("sample_item\n".utf8).write(to: files.appendingPathComponent("sample_item.txt"))
+    try Data("other\n".utf8).write(to: files.appendingPathComponent("other.txt"))
+    let tools = Toolchain.resolve(includeDocumentReaders: false)
+    let service = SearchService(tools: tools)
+    let model = SearchViewModel(service: service,
+        persistence: AppPersistence(baseDirectory: root.appendingPathComponent("settings")), loadSavedState: false)
+    defer { model.stopSearch() }
+    model.scopeURL = files
+    model.mode = mode
+    model.includeHidden = false
+    if mode == .contents { model.contentsInput = "sample_item" }
+    else { model.filenameInput = "sample_item" }
+    let request = model.searchState.makeRequest()
+    let expected = try SearchPipelineCompiler(tools: tools).compile(request).executionScript
+    let executable = try #require(mode == .contents ? tools.rg : tools.fd)
+    #expect(expected.hasPrefix(executable.path + " "))
+
+    model.scheduleSearch(immediate: true)
+    let deadline = Date().addingTimeInterval(10)
+    while (model.isSearching || model.results.isEmpty) && Date() < deadline { try await Task.sleep(for: .milliseconds(20)) }
+    try #require(!model.isSearching && !model.results.isEmpty, "\(model.statusMessage)")
+    #expect(model.commandPreview == expected)
+    let pasteboard = NSPasteboard.withUniqueName()
+    defer { pasteboard.releaseGlobally() }
+    model.copyCommandPreview(to: pasteboard)
+    let copied = try #require(pasteboard.string(forType: .string))
+    #expect(copied == expected)
+
+    let output = try await ProcessRunner.run(spec: SearchPipeline.command(copied), pathOverride: tools.searchPath)
+    #expect(output.exitCode == 0)
+    let rows = mode == .contents ? service.parseRipgrepJSON(output.stdout, request: request)
+        : service.parseNameSearchOutput(output.stdout, request: request)
+    #expect(Set(rows.map(\.path)) == Set(model.results.map(\.path)))
+    let restored = try CLICommandParser.parse(copied, currentDirectory: root)
+    #expect(try PreparedSearch(request: restored.makeRequest(), tools: tools).command == expected)
+}
+
+@Test func legacySimpleSearchWrappersStillImportAndRejectEditedCommands() throws {
+    let root = FileManager.default.temporaryDirectory
+    let tools = Toolchain.resolve(includeDocumentReaders: false)
+    var request = SearchRequest(query: "", mode: .everything, scope: root, includeHidden: false,
+        caseSensitive: false, syntax: .literal, exactNameMatch: false, maxResults: .max)
+    request.refinements.name = "sample_item"
+    request.includeMetadata = true
+    let command = try SearchPipelineCompiler(tools: tools).compile(request, includeCommandMetadata: false).executionScript
+    let legacyBody = try SearchCommandExport(request, tools: tools).header() + command
+    let legacy = SearchPipeline.command(legacyBody).shellString
+    let restored = try CLICommandParser.parse(legacy, currentDirectory: root)
+    #expect(restored.refinements.name == "sample_item")
+    #expect(try PreparedSearch(request: restored.makeRequest(), tools: tools).command == command)
+    let edited = SearchPipeline.command(legacyBody.replacingOccurrences(of: "-- sample_item ", with: "-- other ")).shellString
+    #expect(throws: (any Error).self) { try CLICommandParser.parse(edited, currentDirectory: root) }
+}
 
 @Test func ordinaryExportsRegenerateExactlyFromParsedControlsWithoutSourceText() throws {
     let root = FileManager.default.temporaryDirectory

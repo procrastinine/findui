@@ -64,6 +64,10 @@ package struct SearchPipelineCompiler {
         var query = try timed.normalizedQuery(source: source)
         tools.resolveReaders(in: &query)
         var pipeline = try compile(query)
+        // GUI preparation requests metadata, but normalization enables it only
+        // when the search needs it. Do not wrap ordinary fd/rg commands merely
+        // to preserve an option that has no effect on their execution.
+        timed.includeMetadata = query.options.includeMetadata
         if includeCommandMetadata && (SearchCommandExport.needsExecutionMetadata(timed) || query.contents.map({ $0.single == nil }) == true || pipeline.plan.stages.count != 1 || ![tools.fd?.path, tools.rg?.path].contains(pipeline.plan.direct?.executable)) {
             pipeline.importHeader = try SearchCommandExport(timed, tools: tools).header()
         }
