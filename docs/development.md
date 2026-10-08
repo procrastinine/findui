@@ -6,12 +6,13 @@ Maintainer instructions. App users can [install the packaged release](installati
 
 ## Build and package (maintainers)
 
-Requires **macOS 14 or newer**, **Swift 6.3 or newer**, and **Rust/Cargo** plus **Go** to build the bundled FOSS tools. These are maintainer dependencies; the packaged app needs none of them.
+Requires **macOS 14 or newer**, **Swift 6.3 or newer**, **Rust/Cargo**, **Go**, and **Ruby 3 or newer**. These are maintainer dependencies; the packaged app needs none of them.
 
 Install the maintainer build tools with Homebrew:
 
 ```sh
-brew install rust go
+brew install rust go ruby
+export PATH="$(brew --prefix ruby)/bin:$PATH"
 ```
 
 Run these commands from the repository root:

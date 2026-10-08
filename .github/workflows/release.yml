@@ -22,13 +22,22 @@ jobs:
       CARGO_HOME: ${{ github.workspace }}/.cache/cargo
       CARGO_TARGET_DIR: ${{ github.workspace }}/.build/content-worker
       PCRE2_SYS_STATIC: '1'
-      GEM_HOME: ${{ github.workspace }}/.cache/gems
       CLANG_MODULE_CACHE_PATH: /tmp/findui-clang-module-cache
       SWIFTPM_MODULECACHE_OVERRIDE: /tmp/findui-swiftpm-module-cache
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.8'
+          cache: false
+
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
+        with:
+          ruby-version: '3.4.10'
+          bundler: none
 
       - name: Check version and build tools
         env:
