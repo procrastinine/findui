@@ -92,18 +92,7 @@ struct TikaSettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Adds spreadsheets, presentations and older Office documents to content searches.")
                 .foregroundStyle(.secondary)
-            HStack {
-                Text("Use version")
-                UtilityPicker(title: "Use version", selection: Binding(
-                    get: { model.status?.selectedVersion ?? (model.legacyJar == nil ? "" : "legacy") },
-                    set: { if $0 != "legacy" { model.select($0.isEmpty ? nil : $0) } }
-                ), values: [""] + (model.legacyJar == nil ? [] : ["legacy"]) + (model.status?.installed.map(\.version) ?? []),
-                              label: { $0.isEmpty ? "Off" : $0 == "legacy" ? "Previously selected jar" : "Tika \($0)" })
-                    .frame(width: 190).disabled(model.busy)
-                    .accessibilityIdentifier("tikaSelectedVersion")
-                Spacer()
-                if model.javaReady == true { Label("Java ready", systemImage: "checkmark.circle").foregroundStyle(.secondary) }
-            }
+            versionPicker
             if model.legacyJar != nil {
                 Text("Your previously selected jar is still in use. Download a managed version to switch, or choose Off to disable it.")
                     .font(.caption).foregroundStyle(.secondary)
@@ -182,6 +171,43 @@ struct TikaSettingsView: View {
             model.reload(); Task { await model.checkJava() }
         }
     }
+
+    private var selectedVersion: Binding<String> {
+        Binding<String>(
+            get: { model.status?.selectedVersion ?? (model.legacyJar == nil ? "" : "legacy") },
+            set: { version in
+                guard version != "legacy" else { return }
+                model.select(version.isEmpty ? nil : version)
+            }
+        )
+    }
+
+    private var versionChoices: [String] {
+        let legacy: [String] = model.legacyJar == nil ? [] : ["legacy"]
+        let installed: [String] = model.status?.installed.map(\.version) ?? []
+        return [""] + legacy + installed
+    }
+
+    private func versionLabel(_ version: String) -> String {
+        if version.isEmpty { return "Off" }
+        if version == "legacy" { return "Previously selected jar" }
+        return "Tika \(version)"
+    }
+
+    private var versionPicker: some View {
+        HStack {
+            Text("Use version")
+            UtilityPicker(title: "Use version", selection: selectedVersion,
+                          values: versionChoices, label: versionLabel)
+                .frame(width: 190).disabled(model.busy)
+                .accessibilityIdentifier("tikaSelectedVersion")
+            Spacer()
+            if model.javaReady == true {
+                Label("Java ready", systemImage: "checkmark.circle").foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private var recommended: TikaRelease? { model.status?.available.first { !$0.archived } }
     private var downloadTitle: String {
         guard let release = recommended else { return "Download Tika" }

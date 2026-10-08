@@ -42,7 +42,7 @@ struct ContentView: View {
         self.aiClient = aiClient
     }
 
-    var body: some View {
+    private var searchContent: some View {
         VStack(spacing: 0) {
             controls
             Divider()
@@ -81,7 +81,7 @@ struct ContentView: View {
                 .accessibilityHidden(true)
         }
         .sheet(
-            isPresented: Binding(
+            isPresented: Binding<Bool>(
                 get: { viewModel.quickLookURL != nil },
                 set: { isPresented in
                     if !isPresented {
@@ -141,6 +141,10 @@ struct ContentView: View {
                 .accessibilityIdentifier("toggleInspectorSidebar")
             }
         }
+    }
+
+    var body: some View {
+        searchContent
         .onReceive(viewModel.$results) { refreshPresentation($0) }
         .onChange(of: viewModel.quickLookURL) { _, url in
             if let url { lastQuickLookURL = url }
@@ -214,22 +218,34 @@ struct ContentView: View {
         .sheet(isPresented: $viewModel.isPermissionHelpPresented) {
             FullDiskAccessSheet()
         }
-        .alert("Couldn’t Open Editor", isPresented: Binding(
-            get: { viewModel.editorError != nil },
-            set: { if !$0 { viewModel.editorError = nil } }
-        )) {
+        .alert("Couldn’t Open Editor", isPresented: isEditorErrorPresented) {
             Button("OK", role: .cancel) { viewModel.editorError = nil }
         } message: {
             Text(viewModel.editorError ?? "")
         }
-        .alert("Couldn’t Export Results", isPresented: Binding(
-            get: { viewModel.actionError != nil },
-            set: { if !$0 { viewModel.actionError = nil } }
-        )) {
+        .alert("Couldn’t Export Results", isPresented: isActionErrorPresented) {
             Button("OK", role: .cancel) { viewModel.actionError = nil }
         } message: {
             Text(viewModel.actionError ?? "")
         }
+    }
+
+    private var isEditorErrorPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { viewModel.editorError != nil },
+            set: { isPresented in
+                if !isPresented { viewModel.editorError = nil }
+            }
+        )
+    }
+
+    private var isActionErrorPresented: Binding<Bool> {
+        Binding<Bool>(
+            get: { viewModel.actionError != nil },
+            set: { isPresented in
+                if !isPresented { viewModel.actionError = nil }
+            }
+        )
     }
 
     private func refreshPresentation(_ results: [SearchResult]) {
