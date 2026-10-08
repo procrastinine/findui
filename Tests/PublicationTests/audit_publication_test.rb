@@ -50,9 +50,13 @@ class PublicationAuditTest < Minitest::Test
   end
 
   def test_local_account_identity_is_detected_without_echoing_it
-    @audit.inspect_text('fixture.txt', Dir.home)
-    refute_empty @audit.findings
-    refute JSON.generate(@audit.findings).include?(Dir.home)
+    # Deterministic on CI too, where the real "runner" account is intentionally
+    # generic and exempt from the personal-identity rule.
+    account = Struct.new(:name, :gecos).new('private-person', 'Private Person')
+    audit = PublicationAudit.new(@root, account: account, home: File.join('/', 'Users', account.name))
+    audit.inspect_text('fixture.txt', account.gecos)
+    assert audit.findings.any? { |finding| finding[:rule] == 'local account identity' }
+    refute JSON.generate(audit.findings).include?(account.gecos)
   end
 
   def test_api_tokens_and_private_keys_are_rejected

@@ -26,13 +26,12 @@ class PublicationAudit
 
   attr_reader :root, :findings, :files
 
-  def initialize(root)
+  def initialize(root, account: Etc.getpwuid, home: Dir.home)
     @root = File.realpath(root)
     @findings = []
     @files = []
     @source_digests = {}
-    account = Etc.getpwuid
-    @identities = [File.basename(Dir.home), account.name, account.gecos.split(',').first].compact
+    @identities = [File.basename(home), account.name, account.gecos.split(',').first].compact
       .reject { |s| s.length < 5 || (GENERIC_USERS + %w[admin build codex developer]).include?(s) }.uniq
     @identity_pattern = @identities.empty? ? nil : /(?<![\p{Alnum}_])(?:#{@identities.map { |s| Regexp.escape(s) }.join('|')})(?![\p{Alnum}_])/i
   end

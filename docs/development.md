@@ -39,6 +39,12 @@ ruby scripts/audit_ai_codex.rb        # local-only Codex transport check; no use
 
 `package_release.sh --skip-build` packages an already built app. Its installation check copies the app outside the checkout, checks system-only runtime linkage, signatures and licenses, then exercises live search, words, status, suggestions, facets, snapshots and the built-in benchmark. It uses disposable cache/preset/Tika directories. Build and benchmark scripts work with PATH or either Homebrew prefix. Release builds use the committed Cargo lockfile and portable runtime CPU feature detection; they do not assume the maintainer's CPU features.
 
+### GitHub Actions releases
+
+The [release workflow](../.github/workflows/release.yml) builds the Apple Silicon app on GitHub's `macos-26` runner with Xcode 26.6. It builds the pinned search tools, runs Rust and Swift tests, audits source/screenshots/app binaries, and verifies the relocated app before packaging. A separate job downloads the verified artifacts, checks both ZIP checksums, and publishes them to GitHub Releases. The app's `BuildInfo.json` links to its commit and Actions run.
+
+For a patch release, increment `CFBundleShortVersionString` and `CFBundleVersion` in `packaging/Info.plist`, commit the change, then push the matching `vX.Y.Z` tag. A tag that disagrees with the app version fails before building. Running the workflow manually on a branch builds and retains the same artifacts without publishing a release. Only the publishing job has repository write permission.
+
 The responsiveness probe separately samples the CLI and its complete process tree; summed RSS can count shared pages more than once and miss short peaks. The GUI probe includes normal input debounce, result publication and AppKit drawing, but not physical keyboard or display scan-out latency. Startup, planner, lifecycle, responsiveness and word-freshness probes accept `FINDUI_BENCHMARK_ROOT=/path/to/existing/folder` to create disposable fixtures on a chosen mounted volume. They do not flush operating-system caches. Reports stay in ignored `.cache/` directories; timings describe the measured build and fixture, not a general speed guarantee.
 
 For development:

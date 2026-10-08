@@ -1,0 +1,115 @@
+name: Build and release macOS app
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build, test, and package Apple Silicon app
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      CARGO_HOME: ${{ github.workspace }}/.cache/cargo
+      CARGO_TARGET_DIR: ${{ github.workspace }}/.build/content-worker
+      PCRE2_SYS_STATIC: '1'
+      GEM_HOME: ${{ github.workspace }}/.cache/gems
+      CLANG_MODULE_CACHE_PATH: /tmp/findui-clang-module-cache
+      SWIFTPM_MODULECACHE_OVERRIDE: /tmp/findui-swiftpm-module-cache
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check version and build tools
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          test "$(uname -m)" = arm64
+          version=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' packaging/Info.plist)
+          if [[ "$REF_TYPE" == tag ]]; then
+            [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+            test "$REF_NAME" = "v$version"
+          fi
+          xcodebuild -version
+          swift --version
+          rustc --version
+          cargo --version
+          go version
+          ruby --version
+          gem install minitest --version '~> 5.0' --no-document
+
+      - name: Build app and bundled search tools
+        run: zsh scripts/build_app.sh
+
+      - name: Test Rust backend
+        run: |
+          source scripts/release_rust_env.sh
+          cargo test --manifest-path Tools/findui-content/Cargo.toml --release --locked
+
+      - name: Test Swift modules and publication checks
+        run: |
+          swift test --disable-sandbox --disable-keychain --disable-netrc --cache-path .cache/swiftpm --no-parallel --jobs 3
+          ruby Tests/PublicationTests/audit_publication_test.rb
+
+      - name: Audit source and app, verify relocated installation, and package
+        run: zsh scripts/package_release.sh --skip-build
+
+      - name: Preserve verified release files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: FindUI-arm64
+          path: |
+            dist/FindUI-*-arm64.zip*
+            dist/FindUI-source.zip*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish:
+    name: Publish verified release
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: FindUI-arm64
+          path: dist
+
+      - name: Verify checksums and publish
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          BUILD_COMMIT: ${{ github.sha }}
+          BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          sha256sum --check --strict ./*.zip.sha256
+          test "$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq .sha)" = "$BUILD_COMMIT"
+          cat > "$RUNNER_TEMP/release-notes.md" <<EOF
+          Built and verified by [GitHub Actions]($BUILD_URL).
+
+          Download the app ZIP, unzip it, and move **FindUI.app** to Applications. Requires **Apple Silicon and macOS 14+**. Core search needs no Homebrew or compiler.
+
+          The app is ad-hoc signed and not notarized. If macOS blocks it, verify its source and use **System Settings → Privacy & Security → Open Anyway**. See the [installation guide](https://github.com/$GH_REPO/blob/$RELEASE_TAG/docs/installation.md).
+
+          Both ZIPs include SHA-256 checksums. The app's BuildInfo.json records its source fingerprints, toolchain versions, commit, and Actions run.
+          EOF
+          gh release create "$RELEASE_TAG" ./*.zip ./*.zip.sha256 ./*.zip.json \
+            --verify-tag --title "FindUI ${RELEASE_TAG#v}" \
+            --generate-notes --notes-file "$RUNNER_TEMP/release-notes.md" --latest
