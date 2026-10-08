@@ -1,0 +1,108 @@
+{
+  "repository": "https://github.com/github-linguist/linguist",
+  "revision": "538da05f034fa5c83bd81df128d144e208898da3",
+  "sha256": "183243e30496ba53f5f8743b0e39c9f0e0bccc5a32639f7b541cc2285db0e043",
+  "curated_extensions": {
+    "C": [
+      "c"
+    ],
+    "C++": [
+      "cpp",
+      "cc",
+      "cxx",
+      "c++",
+      "cppm",
+      "hpp",
+      "hxx",
+      "hh"
+    ],
+    "C#": [
+      "cs",
+      "csx"
+    ],
+    "Dart": [
+      "dart"
+    ],
+    "Go": [
+      "go"
+    ],
+    "Java": [
+      "java"
+    ],
+    "JavaScript": [
+      "js",
+      "jsx",
+      "mjs",
+      "cjs"
+    ],
+    "Julia": [
+      "jl"
+    ],
+    "Kotlin": [
+      "kt",
+      "kts"
+    ],
+    "Lua": [
+      "lua"
+    ],
+    "Objective-C": [
+      "m"
+    ],
+    "Perl": [
+      "pl",
+      "pm",
+      "perl"
+    ],
+    "PHP": [
+      "php"
+    ],
+    "PowerShell": [
+      "ps1",
+      "psd1",
+      "psm1"
+    ],
+    "Python": [
+      "py",
+      "py3",
+      "pyi",
+      "pyw"
+    ],
+    "R": [
+      "r"
+    ],
+    "Ruby": [
+      "rb",
+      "rbi",
+      "rbw"
+    ],
+    "Rust": [
+      "rs",
+      "rs.in"
+    ],
+    "Scala": [
+      "scala",
+      "sbt",
+      "sc"
+    ],
+    "Shell": [
+      "sh",
+      "bash",
+      "zsh",
+      "ksh",
+      "command"
+    ],
+    "SQL": [
+      "sql"
+    ],
+    "Swift": [
+      "swift"
+    ],
+    "TypeScript": [
+      "ts",
+      "mts",
+      "cts",
+      "tsx"
+    ]
+  },
+  "policy": "Curated common suffixes, checked against Linguist; extension filtering is not content language detection. Literal CLI extensions bypass aliases."
+}

@@ -1,0 +1,8 @@
+{
+  "ripgrep": "15.2.0",
+  "fd-find": "10.5.0",
+  "fzf": {
+    "version": "0.74.4",
+    "sum": "h1:DSqIW3ZxtkuuPzeLKrVnHdoWqT9VCIGRbjc/lXiGCso="
+  }
+}

@@ -1,0 +1,42 @@
+[package]
+name = "findui-content"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Headless, single-pass parallel content search for FindUI"
+
+[dependencies]
+base64 = "0.22"
+grep-matcher = "0.1"
+grep-regex = "0.1"
+grep-searcher = "0.1"
+regex-syntax = "0.8"
+rayon = "1.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+libc = "0.2"
+signal-hook = "0.3"
+quick-xml = "0.38"
+plist = "1"
+# 0.11 detects ARM/x86 SHA acceleration by default, with portable fallbacks.
+sha2 = "0.11"
+# Keep the measured compact-cache backend explicit across upstream defaults.
+flate2 = { version = "1", default-features = false, features = ["miniz_oxide", "runtime_detection"] }
+regex = "1"
+rawzip = "0.5.1"
+ignore = "0.4.33"
+unicode-normalization = "0.1"
+pcre2 = "0.2"
+rusqlite = { version = "0.38", features = ["bundled", "functions", "hooks"] }
+mailparse = "0.16"
+memchr = "2"
+html2text = "0.17"
+encoding_rs = "0.8"
+rapidfuzz = "0.5"
+icu_segmenter = { version = "2", default-features = false, features = ["compiled_data"] }
+rust-stemmers = "1.2"
+
+[profile.release]
+lto = "thin"
+strip = true

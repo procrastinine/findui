@@ -1,0 +1,11 @@
+[package]
+name = "findui-hash-benchmark"
+version = "0.0.0"
+edition = "2021"
+[dependencies]
+sha2 = "=0.10.9"
+[features]
+software = ["sha2/force-soft"]
+accelerated = ["sha2/asm"]
+[profile.release]
+lto = "thin"

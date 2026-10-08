@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <title>FindUI</title>
+  <desc>A white folder and search lens containing a terminal prompt on a blue rounded square.</desc>
+  <defs>
+    <linearGradient id="tile" x1="260" y1="80" x2="742" y2="944" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51B5FF"/>
+      <stop offset="0.48" stop-color="#2580EE"/>
+      <stop offset="1" stop-color="#1553C8"/>
+    </linearGradient>
+    <linearGradient id="foreground" x1="282" y1="269" x2="700" y2="752" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E3F0FD"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="512" y1="80" x2="512" y2="944" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0.36"/>
+      <stop offset="0.5" stop-color="white" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="white" stop-opacity="0.18"/>
+    </linearGradient>
+    <filter id="tile-shadow" x="40" y="48" width="944" height="940" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#153B75" flood-opacity="0.18"/>
+    </filter>
+    <filter id="layer-shadow" x="180" y="215" width="685" height="625" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#10428C" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <rect x="80" y="80" width="864" height="864" rx="194" fill="url(#tile)" filter="url(#tile-shadow)"/>
+  <rect x="82" y="82" width="860" height="860" rx="192" stroke="url(#edge)" stroke-width="3"/>
+
+  <g filter="url(#layer-shadow)">
+    <path d="M242 386V309C242 287 260 269 282 269H401C415 269 428 275 436 286L474 333H708C730 333 748 351 748 373V424M402 664H276C257 664 242 649 242 630V402H602"
+          stroke="url(#foreground)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g filter="url(#layer-shadow)">
+    <path d="M674 646L780 752" stroke="url(#foreground)" stroke-width="64" stroke-linecap="round"/>
+    <circle cx="570" cy="542" r="143" fill="#17385F" stroke="url(#foreground)" stroke-width="48"/>
+  </g>
+  <path d="M495 500L540 542L495 584M578 584H634"
+        stroke="#F3F8FF" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
